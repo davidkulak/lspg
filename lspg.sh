@@ -67,9 +67,9 @@ function fVacuum ()
     PORT=$2;
     PGUSER=$3;
     if [[ $VACUUMFULL == 1 ]]; then
-        su - $PGUSER -c "$BINVACUUM -avf -h $SOCKDIR -p $PORT";
+        su - $PGUSER -c "$BINVACUUM -avzf -h $SOCKDIR -p $PORT";
     else
-        su - $PGUSER -c "$BINVACUUM -av -h $SOCKDIR -p $PORT";
+        su - $PGUSER -c "$BINVACUUM -avz -h $SOCKDIR -p $PORT";
     fi
 }   
 
