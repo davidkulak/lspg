@@ -2,11 +2,7 @@
 ##############################################################################
 # lspg.sh
 ##############################################################################
-#But :
 #   Liste tous les cluster et bases PostgreSQL d'une machine
-##############################################################################
-# PREREQUIS :
-#   - Liste des prerequis
 ##############################################################################
 # Parametre(s) :
 #  -l
@@ -49,12 +45,16 @@ REQ="$BINPSQL -h $SOCKDIR -p $PORT -U $PGUSER -d postgres --pset tuples_only 2>/
 
 function fHelp
 {
-	echo "	        USAGE: ./lspg.sh [l | d | t | s | c | p <port>]"
+	echo "	        USAGE: ./lspg.sh [l | d |Â t |Â s | c | v | f | i | r | p <port>]"
 	echo "	                  -l        | Affiche plus d'infos sur les clusters"
 	echo "	                  -d        | Affiche les bases"
 	echo "	                  -t        | Affiche les tablespaces (si il y en a)"
-	echo "	                  -s        | Affiche encodage et taille des bases si option -d utilisée"
-	echo "	                  -c        | Permet de se connecter ensuite à l'un des clusters proposés"
+	echo "	                  -s        | Affiche encodage et taille des bases si option -d utilisÃ©e"
+	echo "	                  -c        | Permet de se connecter ensuite Ã  l'un des clusters proposÃ©s"
+	echo "	                  -v        | Permet de faire un vaccum des clusters"
+	echo "	                  -f        | Permet de faire un vaccum full des clusters si option -v est utilisÃ©e"
+	echo "	                  -i        | Permet de faire un reindex des clusters"
+	echo "	                  -r        | Permet de faire un reload des clusters"
 	echo "	                  -p <port> | Ne montre que les bases du cluster <port> "
 	exit 0;
 }
@@ -65,7 +65,11 @@ function fVacuum ()
     SOCKDIR=$1;
     PORT=$2;
     PGUSER=$3;
-    su - $PGUSER -c "$BINVACUUM -av -h $SOCKDIR -p $PORT";
+    if [[ $VACUUMFULL == 1 ]]; then
+        su - $PGUSER -c "$BINVACUUM -avf -h $SOCKDIR -p $PORT";
+    else
+        su - $PGUSER -c "$BINVACUUM -av -h $SOCKDIR -p $PORT";
+    fi
 }   
 
 
@@ -75,6 +79,16 @@ function fReindex ()
     PORT=$2;
     PGUSER=$3;
     su - $PGUSER -c "$BINREINDEX -av -h $SOCKDIR -p $PORT";
+}
+
+function fReload ()
+{
+    SOCKDIR=$1;
+    PORT=$2;
+    PGUSER=$3;
+    DATADIR=$4
+    BINPGCTL=$(find /usr -type f -name pg_ctl)
+    su - $PGUSER -c "$BINPGCTL -D $DATADIR reload";
 }
 
 function fListTbs ()
@@ -188,6 +202,81 @@ function fCluster ()
             fReindex $SOCKDIR $PORT $PGUSER
         fi
 
+        # On recharge la configuration
+        if [[ $RELOAD ]]; then
+            fReload $SOCKDIR $PORT $PGUSER $PG_CL_NAME
+        fi
+        fi
+
+​
+
+        # On recharge la configuration
+
+        if [[ $RELOAD ]]; then
+
+            fReload $SOCKDIR $PORT $PGUSER $PG_CL_NAME
+
+        fi
+
+​
+
+}
+
+​
+
+#Init
+
+​
+
+COUNTER=1
+
+​
+
+#Parametres
+
+​
+
+while getopts dtlcsvfirp:h option
+
+do
+
+ case $option in
+
+  l) DETAIL=1 ;;
+
+  d) SHOWDB=1 ;;
+
+  s) SHOWDBSIZE=1 ;;
+
+  t) SHOWTBS=1 ;;
+
+  c) CONNECT=1 ;;
+
+  v) VACUUM=1 ;;
+
+  f) VACUUMFULL=1 ;;
+
+  i) REINDEX=1 ;;
+
+  r) RELOAD=1 ;;
+
+  p) PORTOPTS=${OPTARG} ;;
+
+  h) fHelp ;;
+
+  *) fHelp ;;
+
+ esac
+
+done
+
+​
+
+#Main
+
+​
+
+if [ "$(id -u)" != "0" ]; then
 }
 
 #Init
@@ -196,7 +285,7 @@ COUNTER=1
 
 #Parametres
 
-while getopts dtlcsvirp:h option
+while getopts dtlcsvfirp:h option
 do
  case $option in
   l) DETAIL=1 ;;
@@ -205,6 +294,7 @@ do
   t) SHOWTBS=1 ;;
   c) CONNECT=1 ;;
   v) VACUUM=1 ;;
+  f) VACUUMFULL=1 ;;
   i) REINDEX=1 ;;
   r) RELOAD=1 ;;
   p) PORTOPTS=${OPTARG} ;;
@@ -216,7 +306,7 @@ done
 #Main
 
 if [ "$(id -u)" != "0" ]; then
-   echo "Ce script doit etre lance en tant que root" 1>&2
+   echo "Script must be run as root" 1>&2
    exit 1
 fi
 
@@ -226,11 +316,15 @@ else
     SERVER=$(netstat -laputen | grep -i -e postgres -e postmaster | grep LISTEN | grep 0.0.0.0 | awk '{print $4"_"$9}')
 fi
 
-for i in $SERVER; do
-    PORT=$(echo $i |awk -F ':' '{print $2}' |awk -F '_' '{print $1}');
-    fCluster $PORT $COUNTER
-    COUNTER=$[$COUNTER +1]
-done
+if [[ $SERVER != "" ]]; then
+    for i in $SERVER; do
+        PORT=$(echo $i |awk -F ':' '{print $2}' |awk -F '_' '{print $1}');
+        fCluster $PORT $COUNTER
+        COUNTER=$[$COUNTER +1]
+    done
+else
+    echo -e "${bold}\033[31mNo running PostgreSQL cluster detected !\033[0m${normal}"
+fi
 
 if [[ $CONNECT == 1 ]]; then
     echo " "
@@ -240,4 +334,3 @@ if [[ $CONNECT == 1 ]]; then
     CONNECT_PORT=$(eval 'echo ${'PORT_${num}'}')
     su - $CONNECT_USER -c "$BINPSQL -h $CONNECT_SOCK -p $CONNECT_PORT -U $CONNECT_USER -d postgres"
 fi
-
