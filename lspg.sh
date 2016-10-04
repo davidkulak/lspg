@@ -78,7 +78,7 @@ function fReindex ()
     SOCKDIR=$1;
     PORT=$2;
     PGUSER=$3;
-    su - $PGUSER -c "$BINREINDEX -av -h $SOCKDIR -p $PORT";
+    su - $PGUSER -c "$BINREINDEX -a -h $SOCKDIR -p $PORT";
 }
 
 function fReload ()
