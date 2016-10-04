@@ -1,6 +1,6 @@
 #!/bin/bash
 ##############################################################################
-# lspg.sh
+# lspg.sh (github.com/davidkulak/lspg)
 ##############################################################################
 #   Liste tous les cluster et bases PostgreSQL d'une machine
 ##############################################################################
@@ -10,12 +10,14 @@
 #  -t
 #  -s
 #  -c
+#  -v
+#  -f
+#  -i
+#  -r
 #  -p " < entier > "
 #  -h
 ##############################################################################
-# Exemple(s)  :
-#
-# lspg.sh -d -p 5432
+# Exemple(s) : lspg.sh -d -p 5432
 ##############################################################################
 
 #Configuration
@@ -45,20 +47,19 @@ REQ="$BINPSQL -h $SOCKDIR -p $PORT -U $PGUSER -d postgres --pset tuples_only 2>/
 
 function fHelp
 {
-	echo "	        USAGE: ./lspg.sh [l | d |Â t |Â s | c | v | f | i | r | p <port>]"
+	echo "	        USAGE: ./lspg.sh [l | d | t | s | c | v | f | i | r | p <port>]"
 	echo "	                  -l        | Affiche plus d'infos sur les clusters"
 	echo "	                  -d        | Affiche les bases"
 	echo "	                  -t        | Affiche les tablespaces (si il y en a)"
-	echo "	                  -s        | Affiche encodage et taille des bases si option -d utilisÃ©e"
-	echo "	                  -c        | Permet de se connecter ensuite Ã  l'un des clusters proposÃ©s"
+	echo "	                  -s        | Affiche encodage et taille des bases si option -d utilisee"
+	echo "	                  -c        | Permet de se connecter ensuite a  l'un des clusters proposes"
 	echo "	                  -v        | Permet de faire un vaccum des clusters"
-	echo "	                  -f        | Permet de faire un vaccum full des clusters si option -v est utilisÃ©e"
+	echo "	                  -f        | Permet de faire un vaccum full des clusters si option -v est utilisee"
 	echo "	                  -i        | Permet de faire un reindex des clusters"
 	echo "	                  -r        | Permet de faire un reload des clusters"
 	echo "	                  -p <port> | Ne montre que les bases du cluster <port> "
 	exit 0;
 }
-
 
 function fVacuum ()
 {
@@ -71,7 +72,6 @@ function fVacuum ()
         su - $PGUSER -c "$BINVACUUM -av -h $SOCKDIR -p $PORT";
     fi
 }   
-
 
 function fReindex ()
 {
@@ -206,77 +206,7 @@ function fCluster ()
         if [[ $RELOAD ]]; then
             fReload $SOCKDIR $PORT $PGUSER $PG_CL_NAME
         fi
-        fi
 
-​
-
-        # On recharge la configuration
-
-        if [[ $RELOAD ]]; then
-
-            fReload $SOCKDIR $PORT $PGUSER $PG_CL_NAME
-
-        fi
-
-​
-
-}
-
-​
-
-#Init
-
-​
-
-COUNTER=1
-
-​
-
-#Parametres
-
-​
-
-while getopts dtlcsvfirp:h option
-
-do
-
- case $option in
-
-  l) DETAIL=1 ;;
-
-  d) SHOWDB=1 ;;
-
-  s) SHOWDBSIZE=1 ;;
-
-  t) SHOWTBS=1 ;;
-
-  c) CONNECT=1 ;;
-
-  v) VACUUM=1 ;;
-
-  f) VACUUMFULL=1 ;;
-
-  i) REINDEX=1 ;;
-
-  r) RELOAD=1 ;;
-
-  p) PORTOPTS=${OPTARG} ;;
-
-  h) fHelp ;;
-
-  *) fHelp ;;
-
- esac
-
-done
-
-​
-
-#Main
-
-​
-
-if [ "$(id -u)" != "0" ]; then
 }
 
 #Init
