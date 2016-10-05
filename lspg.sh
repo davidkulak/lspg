@@ -87,7 +87,7 @@ function fReload ()
     PORT=$2;
     PGUSER=$3;
     DATADIR=$4
-    BINPGCTL=$(find /usr -type f -name pg_ctl)
+    BINPGCTL=$(find /usr -type f -name pg_ctl | head -n 1)
     su - $PGUSER -c "$BINPGCTL -D $DATADIR reload";
 }
 
