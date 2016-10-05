@@ -40,8 +40,8 @@ CLMASTER="select pg_is_in_recovery();"
 CLSTANDALONE="select count(1) from pg_stat_replication;"
 CLSTANDBY="select client_addr,sync_state from pg_stat_replication;"
 CLREPMGR="select count(*) from pg_stat_activity where datname='repmgr_db' AND query LIKE '%INSERT%' AND query NOT LIKE '%pg_stat_activity%';"
+CLLASTVACUUM="select last_vacuum from pg_stat_user_tables limit 1;"
 REQ="$BINPSQL -h $SOCKDIR -p $PORT -U $PGUSER -d postgres --pset tuples_only 2>/dev/null";
-
 
 #Fonctions
 
@@ -117,7 +117,9 @@ function fListDbs ()
       BASESIZE="SELECT pg_size_pretty(pg_database_size('$base'));";
       encodage=$(su - $PGUSER -c "echo \"$BASEENCODING\" | $REQ ");
       size=$(su - $PGUSER -c "echo \"$BASESIZE\" | $REQ ");
-      printf "  * \e[1;32m%-30s \e[0m%-10s %-10s\n" $base $encodage ${size//[[:blank:]]/};
+      lastvacuum=$(su - $PGUSER -c "echo \"$CLLASTVACUUM\" | $BINPSQL -h $SOCKDIR -p $PORT -U $PGUSER -d $base --pset tuples_only 2>/dev/null ");
+      lastvacuumpretty=$(echo $lastvacuum | cut -d ' ' -f 1);
+      printf "  * \e[1;32m%-30s \e[0m%-10s %-10s %-30s \n" $base $encodage ${size//[[:blank:]]/} LastVacuum:$lastvacuumpretty;
   else
       echo -e "  * \e[1;32m$base\e[0m";
   fi
