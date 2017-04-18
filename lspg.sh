@@ -41,6 +41,7 @@ CLSTANDALONE="select count(1) from pg_stat_replication;"
 CLSTANDBY="select client_addr,sync_state from pg_stat_replication;"
 CLREPMGR="select count(*) from pg_stat_activity where datname='repmgr_db' AND query LIKE '%INSERT%' AND query NOT LIKE '%pg_stat_activity%';"
 CLLASTVACUUM="select last_vacuum from pg_stat_user_tables limit 1;"
+CLSTARTUPTIME="SELECT pg_postmaster_start_time();"
 REQ="$BINPSQL -h $SOCKDIR -p $PORT -U $PGUSER -d postgres --pset tuples_only 2>/dev/null";
 
 #Fonctions
@@ -138,6 +139,7 @@ function fCluster ()
         PG_CL_VERSION=$(su - $PGUSER -c "echo \"$CLVERSION\" | $REQ " | sed 's/ //g');
         PG_CL_ENCODING=$(su - $PGUSER -c "echo \"$CLENCODING\" | $REQ " | sed 's/ //g');
         PG_CL_NAME=$(su - $PGUSER -c "echo \"$CLNAME\" | $REQ " | sed 's/ //g');
+        PG_CL_STARTUPTIME=$(su - $PGUSER -c "echo \"$CLSTARTUPTIME\" | $REQ " | sed 's/^ //g' | cut -d '.' -f 1);
 	PG_CL_MASTER=$(su - $PGUSER -c "echo \"$CLMASTER\" | $REQ " | sed 's/ //g');
 
 	eval USER_$COUNT=${PGUSER};
@@ -177,13 +179,18 @@ function fCluster ()
 	else
 	    echo -e "${bold}[CLUSTER]${normal} (${PG_CL_NAME##*/}) $PGTYPE";
 	fi
-        echo -e "  * Port     : \e[90m$PORT\e[0m";
-	echo -e "  * Version  : \e[90m$PG_CL_VERSION\e[0m";
+        echo -e "  * Port      : \e[90m$PORT\e[0m";
+	echo -e "  * Version   : \e[90m$PG_CL_VERSION\e[0m";
 	if [[ $DETAIL == 1 ]]; then
-            echo -e "  * Encodage : \e[90m$PG_CL_ENCODING\e[0m";
-	    echo -e "  * SockDir  : \e[90m$SOCKDIR\e[0m";
+            echo -e "  * Encodage  : \e[90m$PG_CL_ENCODING\e[0m";
+	    echo -e "  * SockDir   : \e[90m$SOCKDIR\e[0m";
 	fi
-        echo -e "  * DataDir  : \e[90m$PG_CL_NAME\e[0m";
+        echo -e "  * DataDir   : \e[90m$PG_CL_NAME\e[0m";
+	
+        if [[ $DETAIL == 1 ]]; then
+            echo -e "  * StartTime : \e[90m$PG_CL_STARTUPTIME\e[0m";
+        fi
+
 	# On liste les Tablespaces existants (si on en trouve)
 	if [[ $SHOWTBS ]]; then
 	    fListTbs $PG_CL_NAME
