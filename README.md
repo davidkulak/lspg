@@ -1,7 +1,25 @@
 # lspg
-List and interact with PostgreSQL clusters
+List PostgreSQL clusters and interact with them : 
+* show PostgreSQL clusters, standby, master or standalone mode
+* show databases, encoding and size
+* simply connect to PostgreSQL clusters
+* vaccum, reindex, reload you cluster
 
-
+# Usage
+```
+root@serveur:~# lspg -h
+	        USAGE: ./lspg.sh [l | d | t | s | c | v | f | i | r | p <port>]
+	                  -l        | Affiche plus d'infos sur les clusters
+	                  -d        | Affiche les bases
+	                  -t        | Affiche les tablespaces (si il y en a)
+	                  -s        | Affiche encodage et taille des bases si option -d utilisee
+	                  -c        | Permet de se connecter ensuite a  l'un des clusters proposes
+	                  -v        | Permet de faire un vaccum des clusters
+	                  -f        | Permet de faire un vaccum full des clusters si option -v est utilisee
+	                  -i        | Permet de faire un reindex des clusters
+	                  -r        | Permet de faire un reload des clusters
+	                  -p <port> | Ne montre que les bases du cluster <port> 
+```
 # Examples
 
 Simple mode :
